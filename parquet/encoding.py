@@ -35,7 +35,10 @@ def read_plain(bit, type_, type_length, num=-1):
             length = struct.unpack('<l', bit[pos:pos+4])[0]
             pos += 4
             arr[i] = bit[pos:pos+length]
-            pos += length            
+            pos += length
+    elif type_ == 0:
+        arr = np.fromstring(bit, dtype='uint8', count=int(np.ceil(num/8.)))
+        arr = np.unpackbits(arr).astype(bool)[:num]
     else:
         arr = np.fromstring(bit, dtype=d, count=num)            
     return arr
