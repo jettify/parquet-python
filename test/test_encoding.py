@@ -21,6 +21,10 @@ class TestPlain(unittest.TestCase):
             999,
             parquet.encoding.read_plain_int64(
                 BytesIO(struct.pack("<q", 999))))
+        self.assertEquals(
+            0,
+            parquet.encoding.read_plain_int64(
+                BytesIO(struct.pack("<q", 0))))
 
     def test_int96(self):
         self.assertEquals(

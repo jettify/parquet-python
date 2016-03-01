@@ -25,7 +25,7 @@ def read_plain_int64(fo):
 
 def read_plain_int96(fo):
     """Reads a 96-bit int using the plain encoding"""
-    return read_plain_byte_array_fixed(fo, 12)
+    #return read_plain_byte_array_fixed(fo, 12)
     tup = struct.unpack("<qi", fo.read(12))
     return tup[0] << 32 | tup[1]
 
@@ -85,7 +85,7 @@ def read_unsigned_var_int(fo):
 
 def byte_width(bit_width):
     "Returns the byte width for the given bit_width"
-    return (bit_width + 7) / 8
+    return int((bit_width + 7) / 8)
 
 
 def read_rle(fo, header, bit_width):
