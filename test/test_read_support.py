@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-from io import BytesIO
+from io import BytesIO, StringIO
 import tempfile
 import unittest
 
@@ -66,7 +66,7 @@ class TestReadApi(unittest.TestCase):
     def test_limit(self):
         pass
 
-class TestCompatibility(object):
+class TestCompatibility(unittest.TestCase):
 
     td = "test-data"
     nation_csv = os.path.join(td, "nation.csv")
@@ -74,8 +74,8 @@ class TestCompatibility(object):
                 "nation.impala.parquet", "nation.plain.parquet",
                 "snappy-nation.impala.parquet"]
 
-    def __init__(self):
-        self.files = [(os.path.join(self.td, p), nation_csv) for p in parquets]
+    def _compare_data(self, expected_data, actual_data):
+        assert expected_data == actual_data
 
     def _test_file_csv(self, parquet_file, csv_file):
         """ Given the parquet_file and csv_file representation, converts the
@@ -83,16 +83,15 @@ class TestCompatibility(object):
             result to the csv_file.
         """
         expected_data = []
-        with open(csv_file, 'rb') as f:
+        with open(csv_file, 'r') as f:
             expected_data = list(csv.reader(f, delimiter='|'))
 
-        actual_raw_data = BytesIO()
+        actual_raw_data = StringIO()
         parquet.dump(parquet_file, Options(), out=actual_raw_data)
         actual_raw_data.seek(0, 0)
         actual_data = list(csv.reader(actual_raw_data, delimiter='\t'))
 
-        assert expected_data == actual_data, "{0} != {1}".format(
-            str(expected_data), str(actual_data))
+        self._compare_data(expected_data, actual_data)
 
         actual_raw_data = StringIO()
         parquet.dump(parquet_file, Options(no_headers=False),
@@ -100,8 +99,7 @@ class TestCompatibility(object):
         actual_raw_data.seek(0, 0)
         actual_data = list(csv.reader(actual_raw_data, delimiter='\t'))[1:]
 
-        assert expected_data == actual_data, "{0} != {1}".format(
-            str(expected_data), str(actual_data))
+        self._compare_data(expected_data, actual_data)
 
     def _test_file_json(self, parquet_file, csv_file):
         """ Given the parquet_file and csv_file representation, converts the
@@ -109,7 +107,7 @@ class TestCompatibility(object):
             result to the csv_file using column agnostic ordering.
         """
         expected_data = []
-        with open(csv_file, 'rb') as f:
+        with open(csv_file, 'r') as f:
             expected_data = list(csv.reader(f, delimiter='|'))
 
         actual_raw_data = StringIO()
@@ -134,7 +132,7 @@ class TestCompatibility(object):
             result to the csv_file using column agnostic ordering.
         """
         expected_data = []
-        with open(csv_file, 'rb') as f:
+        with open(csv_file, 'r') as f:
             expected_data = list(csv.reader(f, delimiter='|'))
 
         def _custom_datatype(in_dict, keys):
@@ -148,10 +146,9 @@ class TestCompatibility(object):
             '''
             columns = [in_dict[key] for key in keys]
             rows = zip(*columns)
-            return rows
+            return [x for x in rows]
 
         actual_data = parquet.dump(parquet_file, Options(format='custom'), out=_custom_datatype)
-
         assert len(expected_data) == len(actual_data)
         footer = parquet.read_footer(parquet_file)
         cols = [s.name for s in footer.schema]
@@ -163,7 +160,8 @@ class TestCompatibility(object):
                     assert expected[i] == actual[c]
 
     def test_all_files(self):
+        self.files = [(os.path.join(self.td, p), self.nation_csv) for p in self.parquets]
         for parquet_file, csv_file in self.files:
-            yield self._test_file_csv, parquet_file, csv_file
-            yield self._test_file_json, parquet_file, csv_file
-            yield self._test_file_custom, parquet_file, csv_file
+            self._test_file_csv(parquet_file, csv_file)
+            self._test_file_json(parquet_file, csv_file)
+            self._test_file_custom(parquet_file, csv_file)

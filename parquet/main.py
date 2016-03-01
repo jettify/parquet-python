@@ -295,7 +295,7 @@ def read_data_page(fo, schema_helper, page_header, column_metadata,
     # TODO Actually use the definition and repetition levels.
 
     if daph.encoding == Encoding.PLAIN:
-        width = getattr(column_metadata, 'width')
+        width = getattr(column_metadata, 'num_values')
         for i in range(daph.num_values):
             vals.append(
                 encoding.read_plain(io_obj, column_metadata.type, width))
@@ -332,6 +332,11 @@ def read_dictionary_page(fo, page_header, column_metadata, width=None):
 def _dump(fo, options, out=sys.stdout):
     def println(value):
         out.write(value + "\n")
+
+    def _to_str(val):
+        if isinstance(val, bytes):
+            return val.decode('utf-8')
+        return str(val)
 
     footer = _read_footer(fo)
     schema_helper = schema.SchemaHelper(footer.schema)
@@ -374,9 +379,9 @@ def _dump(fo, options, out=sys.stdout):
             if options.limit != -1 and i + total_count >= options.limit:
                 return
             if options.format == "csv":
-                println("\t".join(str(res[k][i]) for k in keys))
+                println("\t".join(_to_str(res[k][i]) for k in keys))
             elif options.format == "json":
-                println(json.dumps(dict([(k, res[k][i]) for k in keys])))
+                println(json.dumps(dict([(k, _to_str(res[k][i])) for k in keys])))
         total_count += rg.num_rows
 
 
