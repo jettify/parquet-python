@@ -31,14 +31,14 @@ def _check_header_magic_bytes(fo):
     "Returns true if the file-like obj has the PAR1 magic bytes at the header"
     fo.seek(0, 0)
     magic = fo.read(4)
-    return magic == 'PAR1'
+    return magic == b'PAR1'
 
 
 def _check_footer_magic_bytes(fo):
     "Returns true if the file-like obj has the PAR1 magic bytes at the footer"
     fo.seek(-4, 2)  # seek to four bytes from the end of the file
     magic = fo.read(4)
-    return magic == 'PAR1'
+    return magic == b'PAR1'
 
 
 def _get_footer_size(fo):
