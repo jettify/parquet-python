@@ -8,8 +8,8 @@ import sys
 from collections import defaultdict
 from parquet.ttypes import (FileMetaData, CompressionCodec, Encoding,
                     FieldRepetitionType, PageHeader, PageType, Type)
-from thrift.protocol import TCompactProtocol
-from thrift.transport import TTransport
+from thriftpy.protocol.compact import TCompactProtocol
+from thriftpy.transport import TTransportBase
 from parquet import encoding
 from parquet import schema
 
@@ -21,6 +21,27 @@ try:
 except ImportError:
     logger.warn(
         "Couldn't import snappy. Support for snappy compression disabled.")
+
+class TFileObjectTransport(TTransportBase):
+  """Wraps a file-like object to make it work as a Thrift transport."""
+
+  def __init__(self, fileobj):
+    self.fileobj = fileobj
+
+  def isOpen(self):
+    return True
+
+  def close(self):
+    self.fileobj.close()
+
+  def read(self, sz):
+    return self.fileobj.read(sz)
+
+  def write(self, buf):
+    self.fileobj.write(buf)
+
+  def flush(self):
+    self.fileobj.flush()
 
 
 class ParquetFormatException(Exception):
@@ -53,8 +74,8 @@ def _read_footer(fo):
     object. This method assumes that the fo references a valid parquet file"""
     footer_size = _get_footer_size(fo)
     fo.seek(-(8 + footer_size), 2)  # seek to beginning of footer
-    tin = TTransport.TFileObjectTransport(fo)
-    pin = TCompactProtocol.TCompactProtocol(tin)
+    tin = TFileObjectTransport(fo)
+    pin = TCompactProtocol(tin)
     fmd = FileMetaData()
     fmd.read(pin)
     return fmd
@@ -62,8 +83,8 @@ def _read_footer(fo):
 
 def _read_page_header(fo):
     """Reads the page_header from the given fo"""
-    tin = TTransport.TFileObjectTransport(fo)
-    pin = TCompactProtocol.TCompactProtocol(tin)
+    tin = TFileObjectTransport(fo)
+    pin = TCompactProtocol(tin)
     ph = PageHeader()
     ph.read(pin)
     return ph

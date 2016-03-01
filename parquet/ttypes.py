@@ -6,12 +6,13 @@
 #  options string: py
 #
 
-from thrift.Thrift import TType, TMessageType, TException, TApplicationException
+from thriftpy.thrift import TType, TMessageType, TException, TApplicationException
 
-from thrift.transport import TTransport
-from thrift.protocol import TBinaryProtocol, TProtocol
+from thriftpy.transport import TTransportBase
+from thriftpy.protocol import TBinaryProtocol
+from thriftpy.protocol.exc import TProtocolException
 try:
-  from thrift.protocol import fastbinary
+  from thriftpy.protocol import fastbinary
 except:
   fastbinary = None
 
@@ -211,93 +212,87 @@ class SchemaElement:
     self.converted_type = converted_type
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.type = iprot.readI32();
+          self.type = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.type_length = iprot.readI32();
+          self.type_length = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I32:
-          self.repetition_type = iprot.readI32();
+          self.repetition_type = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.STRING:
-          self.name = iprot.readString();
+          self.name = iprot.read_string()
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.I32:
-          self.num_children = iprot.readI32();
+          self.num_children = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.I32:
-          self.converted_type = iprot.readI32();
+          self.converted_type = iprot.read_int()
         else:
           iprot.skip(ftype)
       else:
         if ftype == TType.I32:
-            piece = iprot.readI32()
+            piece = iprot.read_int()
         elif ftype == TType.STRING:
-            piece = iprot.readString()
+            piece = iprot.read_string()
         else:
             iprot.skip(ftype)
             piece = None
         self.extra = getattr(self, 'extra', [])
         self.extra.append(piece)
         # iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('SchemaElement')
+    oprot.write_struct_begin('SchemaElement')
     if self.type is not None:
-      oprot.writeFieldBegin('type', TType.I32, 1)
-      oprot.writeI32(self.type)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('type', TType.I32, 1)
+      oprot.write_i32(self.type)
+      oprot.write_field_end()
     if self.type_length is not None:
-      oprot.writeFieldBegin('type_length', TType.I32, 2)
-      oprot.writeI32(self.type_length)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('type_length', TType.I32, 2)
+      oprot.write_i32(self.type_length)
+      oprot.write_field_end()
     if self.repetition_type is not None:
-      oprot.writeFieldBegin('repetition_type', TType.I32, 3)
-      oprot.writeI32(self.repetition_type)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('repetition_type', TType.I32, 3)
+      oprot.write_i32(self.repetition_type)
+      oprot.write_field_end()
     if self.name is not None:
-      oprot.writeFieldBegin('name', TType.STRING, 4)
-      oprot.writeString(self.name)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('name', TType.STRING, 4)
+      oprot.write_string(self.name)
+      oprot.write_field_end()
     if self.num_children is not None:
-      oprot.writeFieldBegin('num_children', TType.I32, 5)
-      oprot.writeI32(self.num_children)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_children', TType.I32, 5)
+      oprot.write_i32(self.num_children)
+      oprot.write_field_end()
     if self.converted_type is not None:
-      oprot.writeFieldBegin('converted_type', TType.I32, 6)
-      oprot.writeI32(self.converted_type)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('converted_type', TType.I32, 6)
+      oprot.write_i32(self.converted_type)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.name is None:
-      raise TProtocol.TProtocolException(message='Required field name is unset!')
+      raise TProtocolException(message='Required field name is unset!')
     return
 
 
@@ -338,72 +333,66 @@ class DataPageHeader:
     self.repetition_level_encoding = repetition_level_encoding
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.num_values = iprot.readI32();
+          self.num_values = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.encoding = iprot.readI32();
+          self.encoding = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I32:
-          self.definition_level_encoding = iprot.readI32();
+          self.definition_level_encoding = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.repetition_level_encoding = iprot.readI32();
+          self.repetition_level_encoding = iprot.read_int()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('DataPageHeader')
+    oprot.write_struct_begin('DataPageHeader')
     if self.num_values is not None:
-      oprot.writeFieldBegin('num_values', TType.I32, 1)
-      oprot.writeI32(self.num_values)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_values', TType.I32, 1)
+      oprot.write_i32(self.num_values)
+      oprot.write_field_end()
     if self.encoding is not None:
-      oprot.writeFieldBegin('encoding', TType.I32, 2)
-      oprot.writeI32(self.encoding)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('encoding', TType.I32, 2)
+      oprot.write_i32(self.encoding)
+      oprot.write_field_end()
     if self.definition_level_encoding is not None:
-      oprot.writeFieldBegin('definition_level_encoding', TType.I32, 3)
-      oprot.writeI32(self.definition_level_encoding)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('definition_level_encoding', TType.I32, 3)
+      oprot.write_i32(self.definition_level_encoding)
+      oprot.write_field_end()
     if self.repetition_level_encoding is not None:
-      oprot.writeFieldBegin('repetition_level_encoding', TType.I32, 4)
-      oprot.writeI32(self.repetition_level_encoding)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('repetition_level_encoding', TType.I32, 4)
+      oprot.write_i32(self.repetition_level_encoding)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.num_values is None:
-      raise TProtocol.TProtocolException(message='Required field num_values is unset!')
+      raise TProtocolException(message='Required field num_values is unset!')
     if self.encoding is None:
-      raise TProtocol.TProtocolException(message='Required field encoding is unset!')
+      raise TProtocolException(message='Required field encoding is unset!')
     if self.definition_level_encoding is None:
-      raise TProtocol.TProtocolException(message='Required field definition_level_encoding is unset!')
+      raise TProtocolException(message='Required field definition_level_encoding is unset!')
     if self.repetition_level_encoding is None:
-      raise TProtocol.TProtocolException(message='Required field repetition_level_encoding is unset!')
+      raise TProtocolException(message='Required field repetition_level_encoding is unset!')
     return
 
 
@@ -424,26 +413,20 @@ class IndexPageHeader:
   )
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('IndexPageHeader')
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+    oprot.write_struct_begin('IndexPageHeader')
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     return
@@ -480,50 +463,44 @@ class DictionaryPageHeader:
     self.encoding = encoding
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.num_values = iprot.readI32();
+          self.num_values = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.encoding = iprot.readI32();
+          self.encoding = iprot.read_int()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('DictionaryPageHeader')
+    oprot.write_struct_begin('DictionaryPageHeader')
     if self.num_values is not None:
-      oprot.writeFieldBegin('num_values', TType.I32, 1)
-      oprot.writeI32(self.num_values)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_values', TType.I32, 1)
+      oprot.write_i32(self.num_values)
+      oprot.write_field_end()
     if self.encoding is not None:
-      oprot.writeFieldBegin('encoding', TType.I32, 2)
-      oprot.writeI32(self.encoding)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('encoding', TType.I32, 2)
+      oprot.write_i32(self.encoding)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.num_values is None:
-      raise TProtocol.TProtocolException(message='Required field num_values is unset!')
+      raise TProtocolException(message='Required field num_values is unset!')
     if self.encoding is None:
-      raise TProtocol.TProtocolException(message='Required field encoding is unset!')
+      raise TProtocolException(message='Required field encoding is unset!')
     return
 
 
@@ -573,32 +550,29 @@ class PageHeader:
     self.dictionary_page_header = dictionary_page_header
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.type = iprot.readI32();
+          self.type = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I32:
-          self.uncompressed_page_size = iprot.readI32();
+          self.uncompressed_page_size = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I32:
-          self.compressed_page_size = iprot.readI32();
+          self.compressed_page_size = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.crc = iprot.readI32();
+          self.crc = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 5:
@@ -621,52 +595,49 @@ class PageHeader:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('PageHeader')
+    oprot.write_struct_begin('PageHeader')
     if self.type is not None:
-      oprot.writeFieldBegin('type', TType.I32, 1)
-      oprot.writeI32(self.type)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('type', TType.I32, 1)
+      oprot.write_i32(self.type)
+      oprot.write_field_end()
     if self.uncompressed_page_size is not None:
-      oprot.writeFieldBegin('uncompressed_page_size', TType.I32, 2)
-      oprot.writeI32(self.uncompressed_page_size)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('uncompressed_page_size', TType.I32, 2)
+      oprot.write_i32(self.uncompressed_page_size)
+      oprot.write_field_end()
     if self.compressed_page_size is not None:
-      oprot.writeFieldBegin('compressed_page_size', TType.I32, 3)
-      oprot.writeI32(self.compressed_page_size)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('compressed_page_size', TType.I32, 3)
+      oprot.write_i32(self.compressed_page_size)
+      oprot.write_field_end()
     if self.crc is not None:
-      oprot.writeFieldBegin('crc', TType.I32, 4)
-      oprot.writeI32(self.crc)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('crc', TType.I32, 4)
+      oprot.write_i32(self.crc)
+      oprot.write_field_end()
     if self.data_page_header is not None:
-      oprot.writeFieldBegin('data_page_header', TType.STRUCT, 5)
+      oprot.write_field_begin('data_page_header', TType.STRUCT, 5)
       self.data_page_header.write(oprot)
-      oprot.writeFieldEnd()
+      oprot.write_field_end()
     if self.index_page_header is not None:
-      oprot.writeFieldBegin('index_page_header', TType.STRUCT, 6)
+      oprot.write_field_begin('index_page_header', TType.STRUCT, 6)
       self.index_page_header.write(oprot)
-      oprot.writeFieldEnd()
+      oprot.write_field_end()
     if self.dictionary_page_header is not None:
-      oprot.writeFieldBegin('dictionary_page_header', TType.STRUCT, 7)
+      oprot.write_field_begin('dictionary_page_header', TType.STRUCT, 7)
       self.dictionary_page_header.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.type is None:
-      raise TProtocol.TProtocolException(message='Required field type is unset!')
+      raise TProtocolException(message='Required field type is unset!')
     if self.uncompressed_page_size is None:
-      raise TProtocol.TProtocolException(message='Required field uncompressed_page_size is unset!')
+      raise TProtocolException(message='Required field uncompressed_page_size is unset!')
     if self.compressed_page_size is None:
-      raise TProtocol.TProtocolException(message='Required field compressed_page_size is unset!')
+      raise TProtocolException(message='Required field compressed_page_size is unset!')
     return
 
 
@@ -701,48 +672,42 @@ class KeyValue:
     self.value = value
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.key = iprot.readString();
+          self.key = iprot.read_string()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.STRING:
-          self.value = iprot.readString();
+          self.value = iprot.read_string()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('KeyValue')
+    oprot.write_struct_begin('KeyValue')
     if self.key is not None:
-      oprot.writeFieldBegin('key', TType.STRING, 1)
-      oprot.writeString(self.key)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('key', TType.STRING, 1)
+      oprot.write_string(self.key)
+      oprot.write_field_end()
     if self.value is not None:
-      oprot.writeFieldBegin('value', TType.STRING, 2)
-      oprot.writeString(self.value)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('value', TType.STRING, 2)
+      oprot.write_string(self.value)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.key is None:
-      raise TProtocol.TProtocolException(message='Required field key is unset!')
+      raise TProtocolException(message='Required field key is unset!')
     return
 
 
@@ -783,39 +748,33 @@ class SortingColumn:
     self.nulls_first = nulls_first
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 3:
         if ftype == TType.BOOL:
-          self.nulls_first = iprot.readBool();
+          self.nulls_first = iprot.readBool()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('SortingColumn')
+    oprot.write_struct_begin('SortingColumn')
     if self.nulls_first is not None:
-      oprot.writeFieldBegin('nulls_first', TType.BOOL, 3)
+      oprot.write_field_begin('nulls_first', TType.BOOL, 3)
       oprot.writeBool(self.nulls_first)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.nulls_first is None:
-      raise TProtocol.TProtocolException(message='Required field nulls_first is unset!')
+      raise TProtocolException(message='Required field nulls_first is unset!')
     return
 
 
@@ -878,168 +837,162 @@ class ColumnMetaData:
     self.dictionary_page_offset = dictionary_page_offset
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.type = iprot.readI32();
+          self.type = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.LIST:
           self.encodings = []
-          (_etype3, _size0) = iprot.readListBegin()
+          (_etype3, _size0) = iprot.read_collection_begin()
           for _i4 in range(_size0):
-            _elem5 = iprot.readI32();
+            _elem5 = iprot.read_int()
             self.encodings.append(_elem5)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.LIST:
           self.path_in_schema = []
-          (_etype9, _size6) = iprot.readListBegin()
+          (_etype9, _size6) = iprot.read_collection_begin()
           for _i10 in range(_size6):
-            _elem11 = iprot.readString();
+            _elem11 = iprot.read_string()
             self.path_in_schema.append(_elem11)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.I32:
-          self.codec = iprot.readI32();
+          self.codec = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.I64:
-          self.num_values = iprot.readI64();
+          self.num_values = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.I64:
-          self.total_uncompressed_size = iprot.readI64();
+          self.total_uncompressed_size = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 7:
         if ftype == TType.I64:
-          self.total_compressed_size = iprot.readI64();
+          self.total_compressed_size = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 8:
         if ftype == TType.LIST:
           self.key_value_metadata = []
-          (_etype15, _size12) = iprot.readListBegin()
+          (_etype15, _size12) = iprot.read_collection_begin()
           for _i16 in range(_size12):
             _elem17 = KeyValue()
             _elem17.read(iprot)
             self.key_value_metadata.append(_elem17)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 9:
         if ftype == TType.I64:
-          self.data_page_offset = iprot.readI64();
+          self.data_page_offset = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 10:
         if ftype == TType.I64:
-          self.index_page_offset = iprot.readI64();
+          self.index_page_offset = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 11:
         if ftype == TType.I64:
-          self.dictionary_page_offset = iprot.readI64();
+          self.dictionary_page_offset = iprot.read_int()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('ColumnMetaData')
+    oprot.write_struct_begin('ColumnMetaData')
     if self.type is not None:
-      oprot.writeFieldBegin('type', TType.I32, 1)
-      oprot.writeI32(self.type)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('type', TType.I32, 1)
+      oprot.write_i32(self.type)
+      oprot.write_field_end()
     if self.encodings is not None:
-      oprot.writeFieldBegin('encodings', TType.LIST, 2)
-      oprot.writeListBegin(TType.I32, len(self.encodings))
+      oprot.write_field_begin('encodings', TType.LIST, 2)
+      oprot.write_collection_begin(TType.I32, len(self.encodings))
       for iter18 in self.encodings:
-        oprot.writeI32(iter18)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+        oprot.write_i32(iter18)
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.path_in_schema is not None:
-      oprot.writeFieldBegin('path_in_schema', TType.LIST, 3)
-      oprot.writeListBegin(TType.STRING, len(self.path_in_schema))
+      oprot.write_field_begin('path_in_schema', TType.LIST, 3)
+      oprot.write_collection_begin(TType.STRING, len(self.path_in_schema))
       for iter19 in self.path_in_schema:
-        oprot.writeString(iter19)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+        oprot.write_string(iter19)
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.codec is not None:
-      oprot.writeFieldBegin('codec', TType.I32, 4)
-      oprot.writeI32(self.codec)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('codec', TType.I32, 4)
+      oprot.write_i32(self.codec)
+      oprot.write_field_end()
     if self.num_values is not None:
-      oprot.writeFieldBegin('num_values', TType.I64, 5)
-      oprot.writeI64(self.num_values)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_values', TType.I64, 5)
+      oprot.write_i64(self.num_values)
+      oprot.write_field_end()
     if self.total_uncompressed_size is not None:
-      oprot.writeFieldBegin('total_uncompressed_size', TType.I64, 6)
-      oprot.writeI64(self.total_uncompressed_size)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('total_uncompressed_size', TType.I64, 6)
+      oprot.write_i64(self.total_uncompressed_size)
+      oprot.write_field_end()
     if self.total_compressed_size is not None:
-      oprot.writeFieldBegin('total_compressed_size', TType.I64, 7)
-      oprot.writeI64(self.total_compressed_size)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('total_compressed_size', TType.I64, 7)
+      oprot.write_i64(self.total_compressed_size)
+      oprot.write_field_end()
     if self.key_value_metadata is not None:
-      oprot.writeFieldBegin('key_value_metadata', TType.LIST, 8)
-      oprot.writeListBegin(TType.STRUCT, len(self.key_value_metadata))
+      oprot.write_field_begin('key_value_metadata', TType.LIST, 8)
+      oprot.write_collection_begin(TType.STRUCT, len(self.key_value_metadata))
       for iter20 in self.key_value_metadata:
         iter20.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.data_page_offset is not None:
-      oprot.writeFieldBegin('data_page_offset', TType.I64, 9)
-      oprot.writeI64(self.data_page_offset)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('data_page_offset', TType.I64, 9)
+      oprot.write_i64(self.data_page_offset)
+      oprot.write_field_end()
     if self.index_page_offset is not None:
-      oprot.writeFieldBegin('index_page_offset', TType.I64, 10)
-      oprot.writeI64(self.index_page_offset)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('index_page_offset', TType.I64, 10)
+      oprot.write_i64(self.index_page_offset)
+      oprot.write_field_end()
     if self.dictionary_page_offset is not None:
-      oprot.writeFieldBegin('dictionary_page_offset', TType.I64, 11)
-      oprot.writeI64(self.dictionary_page_offset)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('dictionary_page_offset', TType.I64, 11)
+      oprot.write_i64(self.dictionary_page_offset)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.type is None:
-      raise TProtocol.TProtocolException(message='Required field type is unset!')
+      raise TProtocolException(message='Required field type is unset!')
     if self.encodings is None:
-      raise TProtocol.TProtocolException(message='Required field encodings is unset!')
+      raise TProtocolException(message='Required field encodings is unset!')
     if self.path_in_schema is None:
-      raise TProtocol.TProtocolException(message='Required field path_in_schema is unset!')
+      raise TProtocolException(message='Required field path_in_schema is unset!')
     if self.codec is None:
-      raise TProtocol.TProtocolException(message='Required field codec is unset!')
+      raise TProtocolException(message='Required field codec is unset!')
     if self.num_values is None:
-      raise TProtocol.TProtocolException(message='Required field num_values is unset!')
+      raise TProtocolException(message='Required field num_values is unset!')
     if self.total_uncompressed_size is None:
-      raise TProtocol.TProtocolException(message='Required field total_uncompressed_size is unset!')
+      raise TProtocolException(message='Required field total_uncompressed_size is unset!')
     if self.total_compressed_size is None:
-      raise TProtocol.TProtocolException(message='Required field total_compressed_size is unset!')
+      raise TProtocolException(message='Required field total_compressed_size is unset!')
     if self.data_page_offset is None:
-      raise TProtocol.TProtocolException(message='Required field data_page_offset is unset!')
+      raise TProtocolException(message='Required field data_page_offset is unset!')
     return
 
 
@@ -1080,22 +1033,19 @@ class ColumnChunk:
     self.meta_data = meta_data
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.STRING:
-          self.file_path = iprot.readString();
+          self.file_path = iprot.read_string()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I64:
-          self.file_offset = iprot.readI64();
+          self.file_offset = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 3:
@@ -1106,32 +1056,29 @@ class ColumnChunk:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('ColumnChunk')
+    oprot.write_struct_begin('ColumnChunk')
     if self.file_path is not None:
-      oprot.writeFieldBegin('file_path', TType.STRING, 1)
-      oprot.writeString(self.file_path)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('file_path', TType.STRING, 1)
+      oprot.write_string(self.file_path)
+      oprot.write_field_end()
     if self.file_offset is not None:
-      oprot.writeFieldBegin('file_offset', TType.I64, 2)
-      oprot.writeI64(self.file_offset)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('file_offset', TType.I64, 2)
+      oprot.write_i64(self.file_offset)
+      oprot.write_field_end()
     if self.meta_data is not None:
-      oprot.writeFieldBegin('meta_data', TType.STRUCT, 3)
+      oprot.write_field_begin('meta_data', TType.STRUCT, 3)
       self.meta_data.write(oprot)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.file_offset is None:
-      raise TProtocol.TProtocolException(message='Required field file_offset is unset!')
+      raise TProtocolException(message='Required field file_offset is unset!')
     return
 
 
@@ -1171,88 +1118,82 @@ class RowGroup:
     self.sorting_columns = sorting_columns
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.LIST:
           self.columns = []
-          (_etype24, _size21) = iprot.readListBegin()
+          (_etype24, _size21) = iprot.read_collection_begin()
           for _i25 in range(_size21):
             _elem26 = ColumnChunk()
             _elem26.read(iprot)
             self.columns.append(_elem26)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.I64:
-          self.total_byte_size = iprot.readI64();
+          self.total_byte_size = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I64:
-          self.num_rows = iprot.readI64();
+          self.num_rows = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.LIST:
           self.sorting_columns = []
-          (_etype30, _size27) = iprot.readListBegin()
+          (_etype30, _size27) = iprot.read_collection_begin()
           for _i31 in range(_size27):
             _elem32 = SortingColumn()
             _elem32.read(iprot)
             self.sorting_columns.append(_elem32)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('RowGroup')
+    oprot.write_struct_begin('RowGroup')
     if self.columns is not None:
-      oprot.writeFieldBegin('columns', TType.LIST, 1)
-      oprot.writeListBegin(TType.STRUCT, len(self.columns))
+      oprot.write_field_begin('columns', TType.LIST, 1)
+      oprot.write_collection_begin(TType.STRUCT, len(self.columns))
       for iter33 in self.columns:
         iter33.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.total_byte_size is not None:
-      oprot.writeFieldBegin('total_byte_size', TType.I64, 2)
-      oprot.writeI64(self.total_byte_size)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('total_byte_size', TType.I64, 2)
+      oprot.write_i64(self.total_byte_size)
+      oprot.write_field_end()
     if self.num_rows is not None:
-      oprot.writeFieldBegin('num_rows', TType.I64, 3)
-      oprot.writeI64(self.num_rows)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_rows', TType.I64, 3)
+      oprot.write_i64(self.num_rows)
+      oprot.write_field_end()
     if self.sorting_columns is not None:
-      oprot.writeFieldBegin('sorting_columns', TType.LIST, 4)
-      oprot.writeListBegin(TType.STRUCT, len(self.sorting_columns))
+      oprot.write_field_begin('sorting_columns', TType.LIST, 4)
+      oprot.write_collection_begin(TType.STRUCT, len(self.sorting_columns))
       for iter34 in self.sorting_columns:
         iter34.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.columns is None:
-      raise TProtocol.TProtocolException(message='Required field columns is unset!')
+      raise TProtocolException(message='Required field columns is unset!')
     if self.total_byte_size is None:
-      raise TProtocol.TProtocolException(message='Required field total_byte_size is unset!')
+      raise TProtocolException(message='Required field total_byte_size is unset!')
     if self.num_rows is None:
-      raise TProtocol.TProtocolException(message='Required field num_rows is unset!')
+      raise TProtocolException(message='Required field num_rows is unset!')
     return
 
 
@@ -1307,117 +1248,111 @@ class FileMetaData:
     self.created_by = created_by
 
   def read(self, iprot):
-    if iprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and isinstance(iprot.trans, TTransport.CReadableTransport) and self.thrift_spec is not None and fastbinary is not None:
-      fastbinary.decode_binary(self, iprot.trans, (self.__class__, self.thrift_spec))
-      return
-    iprot.readStructBegin()
+    iprot.read_struct_begin()
     while True:
-      (fname, ftype, fid) = iprot.readFieldBegin()
+      (fname, ftype, fid) = iprot.read_field_begin()
       if ftype == TType.STOP:
         break
       if fid == 1:
         if ftype == TType.I32:
-          self.version = iprot.readI32();
+          self.version = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 2:
         if ftype == TType.LIST:
           self.schema = []
-          (_etype38, _size35) = iprot.readListBegin()
+          (_etype38, _size35) = iprot.read_collection_begin()
           for _i39 in range(_size35):
             _elem40 = SchemaElement()
             _elem40.read(iprot)
             self.schema.append(_elem40)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 3:
         if ftype == TType.I64:
-          self.num_rows = iprot.readI64();
+          self.num_rows = iprot.read_int()
         else:
           iprot.skip(ftype)
       elif fid == 4:
         if ftype == TType.LIST:
           self.row_groups = []
-          (_etype44, _size41) = iprot.readListBegin()
+          (_etype44, _size41) = iprot.read_collection_begin()
           for _i45 in range(_size41):
             _elem46 = RowGroup()
             _elem46.read(iprot)
             self.row_groups.append(_elem46)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 5:
         if ftype == TType.LIST:
           self.key_value_metadata = []
-          (_etype50, _size47) = iprot.readListBegin()
+          (_etype50, _size47) = iprot.read_collection_begin()
           for _i51 in range(_size47):
             _elem52 = KeyValue()
             _elem52.read(iprot)
             self.key_value_metadata.append(_elem52)
-          iprot.readListEnd()
+          iprot.read_collection_end()
         else:
           iprot.skip(ftype)
       elif fid == 6:
         if ftype == TType.STRING:
-          self.created_by = iprot.readString();
+          self.created_by = iprot.read_string()
         else:
           iprot.skip(ftype)
       else:
         iprot.skip(ftype)
-      iprot.readFieldEnd()
-    iprot.readStructEnd()
+      iprot.read_field_end()
+    iprot.read_struct_end()
 
   def write(self, oprot):
-    if oprot.__class__ == TBinaryProtocol.TBinaryProtocolAccelerated and self.thrift_spec is not None and fastbinary is not None:
-      oprot.trans.write(fastbinary.encode_binary(self, (self.__class__, self.thrift_spec)))
-      return
-    oprot.writeStructBegin('FileMetaData')
+    oprot.write_struct_begin('FileMetaData')
     if self.version is not None:
-      oprot.writeFieldBegin('version', TType.I32, 1)
-      oprot.writeI32(self.version)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('version', TType.I32, 1)
+      oprot.write_i32(self.version)
+      oprot.write_field_end()
     if self.schema is not None:
-      oprot.writeFieldBegin('schema', TType.LIST, 2)
-      oprot.writeListBegin(TType.STRUCT, len(self.schema))
+      oprot.write_field_begin('schema', TType.LIST, 2)
+      oprot.write_collection_begin(TType.STRUCT, len(self.schema))
       for iter53 in self.schema:
         iter53.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.num_rows is not None:
-      oprot.writeFieldBegin('num_rows', TType.I64, 3)
-      oprot.writeI64(self.num_rows)
-      oprot.writeFieldEnd()
+      oprot.write_field_begin('num_rows', TType.I64, 3)
+      oprot.write_i64(self.num_rows)
+      oprot.write_field_end()
     if self.row_groups is not None:
-      oprot.writeFieldBegin('row_groups', TType.LIST, 4)
-      oprot.writeListBegin(TType.STRUCT, len(self.row_groups))
+      oprot.write_field_begin('row_groups', TType.LIST, 4)
+      oprot.write_collection_begin(TType.STRUCT, len(self.row_groups))
       for iter54 in self.row_groups:
         iter54.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.key_value_metadata is not None:
-      oprot.writeFieldBegin('key_value_metadata', TType.LIST, 5)
-      oprot.writeListBegin(TType.STRUCT, len(self.key_value_metadata))
+      oprot.write_field_begin('key_value_metadata', TType.LIST, 5)
+      oprot.write_collection_begin(TType.STRUCT, len(self.key_value_metadata))
       for iter55 in self.key_value_metadata:
         iter55.write(oprot)
-      oprot.writeListEnd()
-      oprot.writeFieldEnd()
+      oprot.write_collection_end()
+      oprot.write_field_end()
     if self.created_by is not None:
-      oprot.writeFieldBegin('created_by', TType.STRING, 6)
-      oprot.writeString(self.created_by)
-      oprot.writeFieldEnd()
-    oprot.writeFieldStop()
-    oprot.writeStructEnd()
+      oprot.write_field_begin('created_by', TType.STRING, 6)
+      oprot.write_string(self.created_by)
+      oprot.write_field_end()
+    oprot.write_field_stop()
+    oprot.write_struct_end()
 
   def validate(self):
     if self.version is None:
-      raise TProtocol.TProtocolException(message='Required field version is unset!')
+      raise TProtocolException(message='Required field version is unset!')
     if self.schema is None:
-      raise TProtocol.TProtocolException(message='Required field schema is unset!')
+      raise TProtocolException(message='Required field schema is unset!')
     if self.num_rows is None:
-      raise TProtocol.TProtocolException(message='Required field num_rows is unset!')
+      raise TProtocolException(message='Required field num_rows is unset!')
     if self.row_groups is None:
-      raise TProtocol.TProtocolException(message='Required field row_groups is unset!')
+      raise TProtocolException(message='Required field row_groups is unset!')
     return
 
 

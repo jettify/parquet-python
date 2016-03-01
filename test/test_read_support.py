@@ -1,7 +1,7 @@
 import csv
 import json
 import os
-from io import StringIO
+from io import BytesIO
 import tempfile
 import unittest
 
@@ -34,7 +34,7 @@ class TestMetadata(unittest.TestCase):
     f = "test-data/nation.impala.parquet"
 
     def test_footer_bytes(self):
-        with open(self.f) as fo:
+        with open(self.f, 'rb') as fo:
             self.assertEquals(327, parquet._get_footer_size(fo))
 
     def test_read_footer(self):
@@ -45,7 +45,7 @@ class TestMetadata(unittest.TestCase):
                  "n_comment"]))
 
     def test_dump_metadata(self):
-        data = StringIO()
+        data = BytesIO()
         parquet.dump_metadata(self.f, data)
 
 
