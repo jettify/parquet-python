@@ -5,6 +5,7 @@ import logging
 import struct
 import io
 import sys
+import os.path
 from collections import defaultdict
 from parquet.ttypes import (FileMetaData, CompressionCodec, Encoding,
                     FieldRepetitionType, PageHeader, PageType, Type)
@@ -159,6 +160,7 @@ def dump_metadata(filename, show_row_group_metadata, out=sys.stdout):
                 cmd = cg.meta_data
                 println("**********")
                 println("      type={type} file_offset={offset} "
+                        "file_name={file} "
                         "compression={codec} "
                         "encodings={encodings} path_in_schema={path_in_schema} "
                         "num_values={num_values} uncompressed_bytes={raw_bytes} "
@@ -167,6 +169,7 @@ def dump_metadata(filename, show_row_group_metadata, out=sys.stdout):
                         "dictionary_page_offset={dictionary_page_offset}".format(
                             type=_get_name(Type, cmd.type),
                             offset=cg.file_offset,
+                            file=cg.file_path,
                             codec=_get_name(CompressionCodec, cmd.codec),
                             encodings=",".join(
                                 [_get_name(
@@ -177,7 +180,12 @@ def dump_metadata(filename, show_row_group_metadata, out=sys.stdout):
                             compressed_bytes=cmd.total_compressed_size,
                             data_page_offset=cmd.data_page_offset,
                             dictionary_page_offset=cmd.dictionary_page_offset))
-                with open(filename, 'rb') as fo:
+
+                local_filename = filename
+                if cg.file_path:
+                    dirname = os.path.dirname(filename)
+                    local_filename = os.path.join(dirname, cg.file_path)
+                with open(local_filename, 'rb') as fo:
                     offset = _get_offset(cmd)
                     fo.seek(offset, 0)
                     values_read = 0
