@@ -90,14 +90,17 @@ def _read_page_header(fo):
     return ph
 
 
+def _validate_parquet_file(fo):
+    if not _check_header_magic_bytes(fo) or \
+       not _check_footer_magic_bytes(fo):
+        raise ParquetFormatException("{0} is not a valid parquet file "
+                                     "(missing magic bytes)"
+                                     .format(filename))
+
 def read_footer(filename):
     """Reads and returns the FileMetaData object for the given file."""
     with open(filename, 'rb') as fo:
-        if not _check_header_magic_bytes(fo) or \
-           not _check_footer_magic_bytes(fo):
-            raise ParquetFormatException("{0} is not a valid parquet file "
-                                         "(missing magic bytes)"
-                                         .format(filename))
+        _validate_parquet_file(fo)
         return _read_footer(fo)
 
 
@@ -154,6 +157,7 @@ def dump_metadata(filename, show_row_group_metadata, out=sys.stdout):
             println("    chunks:")
             for cg in rg.columns:
                 cmd = cg.meta_data
+                println("**********")
                 println("      type={type} file_offset={offset} "
                         "compression={codec} "
                         "encodings={encodings} path_in_schema={path_in_schema} "
