@@ -6,6 +6,7 @@ from .schema import SchemaHelper
 
 from collections import defaultdict
 import pandas as pd
+import os.path
 
 
 class CurrentLocation(object):
@@ -20,9 +21,12 @@ class CurrentLocation(object):
 
 class ParquetReader(object):
     def __init__(self, binary_stream):
-        self._fo = binary_stream
-        _validate_parquet_file(self._fo)
-        self._footer = _read_footer(self._fo)
+        self._main_file = None
+        self._directory = None
+        self._files = {}
+        self._open_main(binary_stream)
+        _validate_parquet_file(self._main_file)
+        self._footer = _read_footer(self._main_file)
         self._schema_helper = SchemaHelper(self._footer.schema)
         self._rg = self._footer.row_groups
         self._cg = self._rg[0].columns
@@ -34,6 +38,47 @@ class ParquetReader(object):
         self._column_group_locations = defaultdict(CurrentLocation)
         self._rows_read = 0
 
+    def __del__(self):
+        self.close()
+
+    def _open_main(self, binary_stream_or_name):
+        if isinstance(binary_stream_or_name, str):
+            if self._is_directory(binary_stream_or_name):
+                self._directory = binary_stream_or_name
+                binary_stream_or_name = os.path.join(binary_stream_or_name, "_metadata")
+            self._main_file = self._open_file(binary_stream_or_name)
+        else:
+            self._main_file = binary_stream_or_name
+
+    def _is_directory(self, file_name):
+        """ For non local files (ie HDFS), this will need to be overridden
+        """
+        return os.path.isdir(file_name)
+
+    def _open_file(self, file_name):
+        """ For non local files (ie HDFS), this will need to be overridden
+        """
+        fileobj = open(file_name, 'rb')
+        self._files[file_name] = fileobj
+        return fileobj
+
+    def _close_file(self, fileobj):
+        """ For non local files (ie HDFS), this will need to be overridden
+        """
+        fileobj.close()
+
+    def _get_file(self, file_name):
+        if self._directory is not None:
+            file_name = os.path.join(self._directory, file_name)
+        if file_name in self._files:
+            return self._files[file_name]
+        return self._open_file(file_name)
+
+    def close(self):
+        for fileobj in self._files.values():
+            self._close_file(fileobj)
+        self._files = []
+
     def _get_column_info(self, col):
         name = ".".join(x for x in col.meta_data.path_in_schema)
         ind = [s for s in self._schema if s.name == name]
@@ -41,8 +86,14 @@ class ParquetReader(object):
         return (name, width)
 
     def _read_rows_in_group(self, col, name, width, rg, remaining_rows):
+        file_name = col.file_path
+
+        if file_name is not None:
+            fileobj = self._get_file(file_name)
+        else:
+            fileobj = self._main_file
         offset = _get_offset(col.meta_data)
-        self._fo.seek(offset, 0)
+        fileobj.seek(offset, 0)
         cmd = col.meta_data
         cmd.width = width
         location_in_group = self._column_group_locations[name]
@@ -52,19 +103,19 @@ class ParquetReader(object):
         column = []
         dict_items = []
         while values_seen < total_rows_in_group:
-            ph = _read_page_header(self._fo)
+            ph = _read_page_header(fileobj)
             if page_index < location_in_group._page_index:
                 # skip
                 if ph.type == PageType.DATA_PAGE:
-                    self._fo.seek(ph.compressed_page_size, 1)
+                    fileobj.seek(ph.compressed_page_size, 1)
                     daph = ph.data_page_header
                     values_seen += daph.num_values
                 elif ph.type == PageType.DICTIONARY_PAGE:
-                    dict_items = read_dictionary_page(self._fo, ph, cmd)
+                    dict_items = read_dictionary_page(fileobj, ph, cmd)
             else:
                 # start reading rows.
                 if ph.type == PageType.DATA_PAGE:
-                    values = read_data_page(self._fo,
+                    values = read_data_page(fileobj,
                                             self._schema_helper, ph,
                                             cmd, dict_items)
 
@@ -90,7 +141,7 @@ class ParquetReader(object):
 
                     values_seen += ph.data_page_header.num_values
                 elif ph.type == PageType.DICTIONARY_PAGE:
-                    dict_items = read_dictionary_page(self._fo, ph, cmd)
+                    dict_items = read_dictionary_page(fileobj, ph, cmd)
             if page_index < location_in_group._page_index:
                 page_index += 1
             else:
