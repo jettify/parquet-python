@@ -129,7 +129,7 @@ class ParquetReader(object):
             for name in columns:
                 res[name] = []
 
-        out = pd.DataFrame(res)
+        out = pd.DataFrame(res, columns=columns)
         for col in columns:
             schema = [s for s in self._schema if col == s.name][0]
             if schema.converted_type:
