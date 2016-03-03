@@ -152,6 +152,11 @@ class ParquetReader(object):
         return column
 
     def read(self, columns=None, rows=None):
+        if columns:
+            for c in columns:
+                if c not in self._cols:
+                    raise ValueError("Unknown column {}".format(c))
+
         columns = columns or self._cols
         res = defaultdict(list)
 
@@ -182,13 +187,15 @@ class ParquetReader(object):
 
         out = pd.DataFrame(res, columns=columns)
         for col in columns:
-            schema = [s for s in self._schema if col == s.name][0]
-            if schema.converted_type:
-                out[col] = convert_column(out[col], schema)
-            elif schema.type in [Type.BYTE_ARRAY,
-                                 Type.FIXED_LEN_BYTE_ARRAY]:
-                def _conv(x):
-                    if x is not None:
-                        return x.decode('utf-8')
-                out[col] = out[col].apply(_conv)
+            match = [s for s in self._schema if col == s.name]
+            if len(match):
+                schema = match[0]
+                if schema.converted_type:
+                    out[col] = convert_column(out[col], schema)
+                elif schema.type in [Type.BYTE_ARRAY,
+                                     Type.FIXED_LEN_BYTE_ARRAY]:
+                    def _conv(x):
+                        if x is not None:
+                            return x.decode('utf-8')
+                    out[col] = out[col].apply(_conv)
         return out

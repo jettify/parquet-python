@@ -282,6 +282,7 @@ def read_data_page(fo, schema_helper, page_header, column_metadata,
     raw_bytes = _read_page(fo, page_header, column_metadata)
     io_obj = io.BytesIO(raw_bytes)
     vals = []
+    definition_levels = None
     # definition levels are skipped if data is required.
     if not schema_helper.is_required(column_metadata.path_in_schema[-1]):
         max_definition_level = schema_helper.max_definition_level(
@@ -314,17 +315,28 @@ def read_data_page(fo, schema_helper, page_header, column_metadata,
     elif daph.encoding == Encoding.PLAIN_DICTIONARY:
         # bit_width is stored as single byte.
         bit_width = struct.unpack("<B", io_obj.read(1))[0]
-        total_seen = 0
         dict_values_bytes = io_obj.read()
         dict_values_io_obj = io.BytesIO(dict_values_bytes)
-        # TODO jcrobak -- not sure that this loop is needed?
-        while total_seen < daph.num_values:
-            values = encoding.read_rle_bit_packed_hybrid(
-                dict_values_io_obj, bit_width, len(dict_values_bytes))
-            if len(values) + total_seen > daph.num_values:
-                values = values[0: daph.num_values - total_seen]
+
+        values = encoding.read_rle_bit_packed_hybrid(
+            dict_values_io_obj, bit_width, len(dict_values_bytes))
+        if definition_levels is not None:
+            # We need to do masking for which are null.
+            idx = 0
+            for ind in definition_levels:
+                if ind is 0:
+                    vals.append(None)
+                else:
+                    vals.append(dictionary[values[idx]])
+                    idx += 1
+        else:
             vals += [dictionary[v] for v in values]
-            total_seen += len(values)
+
+        if len(vals)  > daph.num_values:
+            vals = vals[0: daph.num_values]
+
+        if len(vals) != daph.num_values:
+            raise ParquetFormatException("Error reading enough data from dictionary")
     else:
         raise ParquetFormatException("Unsupported encoding: %s",
                                      _get_name(Encoding, daph.encoding))
