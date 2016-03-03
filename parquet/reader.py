@@ -85,7 +85,8 @@ class ParquetReader(object):
         width = ind[0].type_length
         return (name, width)
 
-    def _read_rows_in_group(self, col, name, width, rg, remaining_rows):
+    def _read_rows_in_group(self, col, name, width, rg, remaining_rows,
+                            natural):
         file_name = col.file_path
 
         if file_name is not None:
@@ -102,9 +103,10 @@ class ParquetReader(object):
         page_index = 0
         column = []
         dict_items = []
+
         while values_seen < total_rows_in_group:
             ph = _read_page_header(fileobj)
-            if page_index < location_in_group._page_index:
+            if page_index < location_in_group._page_index and not natural:
                 # skip
                 if ph.type == PageType.DATA_PAGE:
                     fileobj.seek(ph.compressed_page_size, 1)
@@ -151,7 +153,7 @@ class ParquetReader(object):
 
         return column
 
-    def read(self, columns=None, rows=None):
+    def read(self, columns=None, rows=None, natural=False):
         if columns:
             for c in columns:
                 if c not in self._cols:
@@ -160,7 +162,10 @@ class ParquetReader(object):
         columns = columns or self._cols
         res = defaultdict(list)
 
+        if natural and rows is not None:
+            raise ValueError("Cannot specify rows with natural")
         remaining_rows = rows
+        rows_read = 0
         while self._row_group_index < len(self._rg):
             rg = self._rg[self._row_group_index]
             cg = rg.columns
@@ -170,10 +175,14 @@ class ParquetReader(object):
                 if name not in columns:
                     continue
                 row_data = self._read_rows_in_group(col, name, width,
-                                                    rg, remaining_rows)
+                                                    rg, remaining_rows, natural)
                 res[name] += row_data
                 if rows_read == 0 and len(row_data):
                     rows_read = len(row_data)
+
+            if natural and rows_read != 0:
+                self._row_group_index += 1
+                break
             if remaining_rows is not None:
                 remaining_rows -= rows_read
                 if remaining_rows == 0:
@@ -186,6 +195,7 @@ class ParquetReader(object):
                 res[name] = []
 
         out = pd.DataFrame(res, columns=columns)
+
         for col in columns:
             match = [s for s in self._schema if col == s.name]
             if len(match):
