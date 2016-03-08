@@ -21,7 +21,7 @@ cdef class BinaryReader:
 
     def __init__(self):
         # Initialize array size to something reasonable
-        self._ensure_array(1024)
+        self._ensure_array(10240)
         self._zero_data = b"\x00\x00\x00\x00"
 
     def __del__(self):
@@ -57,7 +57,7 @@ cdef class BinaryReader:
         self._ensure_array(total)
         cdef int* native =  &self._array.data.as_ints[0]
         size = read_bitpacked_internal(py_raw, total, data_mask, native, total, bit_width)
-        return self._array.tolist()[:size]
+        return self._array[:size]
 
     def read_rle(self, fo, header, width):
         count = header >> 1
@@ -66,12 +66,12 @@ cdef class BinaryReader:
         value = struct.unpack("<i", data)[0]
         return [ value for i in range(count)]
 
-    def read_plain_boolean(self, fo):
+    def read_plain_boolean(self, fo, fixed_length=None):
         """Reads a boolean using the plain encoding"""
         raise NotImplemented
 
 
-    def read_plain_int32(self, fo):
+    def read_plain_int32(self, fo, fixed_length=None):
         """Reads a 32-bit int using the plain encoding"""
         cdef bytes py_bytes = fo.read(4)
 #if PY_LITTLE_ENDIAN
@@ -83,37 +83,37 @@ cdef class BinaryReader:
 #endif
 
 
-    def read_plain_int64(self, fo):
+    def read_plain_int64(self, fo, fixed_length=None):
         """Reads a 64-bit int using the plain encoding"""
         tup = struct.unpack("<q", fo.read(8))
         return tup[0]
 
 
-    def read_plain_int96(self, fo):
+    def read_plain_int96(self, fo, fixed_length=None):
         """Reads a 96-bit int using the plain encoding"""
         #return read_plain_byte_array_fixed(fo, 12)
         tup = struct.unpack("<qi", fo.read(12))
         return tup[0] << 32 | tup[1]
 
 
-    def read_plain_float(self, fo):
+    def read_plain_float(self, fo, fixed_length=None):
         """Reads a 32-bit float using the plain encoding"""
         tup = struct.unpack("<f", fo.read(4))
         return tup[0]
 
 
-    def read_plain_double(self, fo):
+    def read_plain_double(self, fo, fixed_length=None):
         """Reads a 64-bit float (double) using the plain encoding"""
         tup = struct.unpack("<d", fo.read(8))
         return tup[0]
 
 
-    def read_plain_byte_array(self, fo):
+    def read_plain_byte_array(self, fo, fixed_length=None):
         """Reads a byte array using the plain encoding"""
         length = self.read_plain_int32(fo)
-        return fo.read(length)
+        return fo.read(length).decode('utf-8')
 
 
     def read_plain_byte_array_fixed(self, fo, fixed_length):
         """Reads a byte array of the given fixed_length"""
-        return fo.read(fixed_length)
+        return fo.read(fixed_length).decode('utf-8')

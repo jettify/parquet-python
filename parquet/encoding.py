@@ -40,11 +40,7 @@ class Encoding(object):
         }
 
     def read_plain(self, fo, type_, type_length):
-        conv = self._DECODE_PLAIN[type_]
-        if type_ == Type.FIXED_LEN_BYTE_ARRAY:
-            return conv(fo, type_length)
-        return conv(fo)
-
+        return self._DECODE_PLAIN[type_](fo, type_length)
 
     def read_rle(self, fo, header):
         """Read a run-length encoded run from the given fo with the given header

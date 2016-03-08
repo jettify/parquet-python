@@ -207,10 +207,4 @@ class ParquetReader(object):
                 schema = match[0]
                 if schema.converted_type:
                     out[col] = convert_column(out[col], schema)
-                elif schema.type in [Type.BYTE_ARRAY,
-                                     Type.FIXED_LEN_BYTE_ARRAY]:
-                    def _conv(x):
-                        if x is not None:
-                            return x.decode('utf-8')
-                    out[col] = out[col].apply(_conv)
         return out

@@ -56,11 +56,11 @@ class TestPlain(unittest.TestCase):
         data = b"foobar"
         fo = BytesIO(data)
         self.assertEquals(
-            data[:3],
+            data[:3].decode('utf-8'),
             reader.read_plain_byte_array_fixed(
                 fo, 3))
         self.assertEquals(
-            data[3:],
+            data[3:].decode('utf-8'),
             reader.read_plain_byte_array_fixed(
                 fo, 3))
 
@@ -69,7 +69,7 @@ class TestPlain(unittest.TestCase):
         data = b"foobar"
         fo = BytesIO(data)
         self.assertEquals(
-            data[:3],
+            data[:3].decode('utf-8'),
             reader.read_plain(
                 fo, Type.FIXED_LEN_BYTE_ARRAY, 3))
 
@@ -107,7 +107,7 @@ class TestBitPacked(unittest.TestCase):
         count = 3 << 1
         reader = parquet.encoding.Encoding(3)
         res = reader.read_bitpacked(fo, count)
-        self.assertEquals([x for x in range(8)], res)
+        self.assertEquals([x for x in range(8)], res.tolist())
 
 
 class TestBitPackedDeprecated(unittest.TestCase):
