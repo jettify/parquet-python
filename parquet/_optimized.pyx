@@ -57,7 +57,7 @@ cdef class BinaryReader:
         self._ensure_array(total)
         cdef int* native =  &self._array.data.as_ints[0]
         size = read_bitpacked_internal(py_raw, total, data_mask, native, total, bit_width)
-        return self._array[:size]
+        return self._array.tolist()[:size]
 
     def read_rle(self, fo, header, width):
         count = header >> 1
