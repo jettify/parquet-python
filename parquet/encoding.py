@@ -3,114 +3,13 @@ import math
 import struct
 import io
 import logging
-
+import parquet._optimized
 from parquet.ttypes import Type
-
-def read_plain_boolean(fo):
-    """Reads a boolean using the plain encoding"""
-    raise NotImplemented
-
-
-def read_plain_int32(fo):
-    """Reads a 32-bit int using the plain encoding"""
-    tup = struct.unpack("<i", fo.read(4))
-    return tup[0]
-
-
-def read_plain_int64(fo):
-    """Reads a 64-bit int using the plain encoding"""
-    tup = struct.unpack("<q", fo.read(8))
-    return tup[0]
-
-
-def read_plain_int96(fo):
-    """Reads a 96-bit int using the plain encoding"""
-    #return read_plain_byte_array_fixed(fo, 12)
-    tup = struct.unpack("<qi", fo.read(12))
-    return tup[0] << 32 | tup[1]
-
-
-def read_plain_float(fo):
-    """Reads a 32-bit float using the plain encoding"""
-    tup = struct.unpack("<f", fo.read(4))
-    return tup[0]
-
-
-def read_plain_double(fo):
-    """Reads a 64-bit float (double) using the plain encoding"""
-    tup = struct.unpack("<d", fo.read(8))
-    return tup[0]
-
-
-def read_plain_byte_array(fo):
-    """Reads a byte array using the plain encoding"""
-    length = read_plain_int32(fo)
-    return fo.read(length)
-
-
-def read_plain_byte_array_fixed(fo, fixed_length):
-    """Reads a byte array of the given fixed_length"""
-    return fo.read(fixed_length)
-
-DECODE_PLAIN = {
-    Type.BOOLEAN: read_plain_boolean,
-    Type.INT32: read_plain_int32,
-    Type.INT64: read_plain_int64,
-    Type.INT96: read_plain_int96,
-    Type.FLOAT: read_plain_float,
-    Type.DOUBLE: read_plain_double,
-    Type.BYTE_ARRAY: read_plain_byte_array,
-    Type.FIXED_LEN_BYTE_ARRAY: read_plain_byte_array_fixed
-}
-
-
-def read_plain(fo, type_, type_length):
-    conv = DECODE_PLAIN[type_]
-    if type_ == Type.FIXED_LEN_BYTE_ARRAY:
-        return conv(fo, type_length)
-    return conv(fo)
-
-
-def read_unsigned_var_int(fo):
-    result = 0
-    shift = 0
-    while True:
-        byte = struct.unpack("<B", fo.read(1))[0]
-        result |= ((byte & 0x7F) << shift)
-        if (byte & 0x80) == 0:
-            break
-        shift += 7
-    return result
 
 
 def byte_width(bit_width):
     "Returns the byte width for the given bit_width"
     return int((bit_width + 7) / 8)
-
-
-def read_rle(fo, header, bit_width):
-    """Read a run-length encoded run from the given fo with the given header
-    and bit_width.
-
-    The count is determined from the header and the width is used to grab the
-    value that's repeated. Yields the value repeated count times.
-    """
-    count = header >> 1
-    zero_data = b"\x00\x00\x00\x00"
-    data = b""
-    width = byte_width(bit_width)
-    if width >= 1:
-        data += fo.read(1)
-    if width >= 2:
-        data += fo.read(1)
-    if width >= 3:
-        data += fo.read(1)
-    if width == 4:
-        data += fo.read(1)
-    data = data + zero_data[len(data):]
-    value = struct.unpack("<i", data)[0]
-    for i in range(count):
-        yield value
 
 
 def width_from_max_int(value):
@@ -123,81 +22,94 @@ def _mask_for_bits(i):
     return (1 << i) - 1
 
 
-def read_bitpacked(fo, header, width):
-    """Reads a bitpacked run of the rle/bitpack hybrid.
+class Encoding(object):
+    def __init__(self, bit_width):
+        self._bit_width = bit_width
+        self._byte_width = byte_width(bit_width)
+        self._mask = _mask_for_bits(bit_width)
+        self._fast_reader = parquet._optimized.BinaryReader()
+        self._DECODE_PLAIN = {
+            Type.BOOLEAN: self._fast_reader.read_plain_boolean,
+            Type.INT32: self._fast_reader.read_plain_int32,
+            Type.INT64: self._fast_reader.read_plain_int64,
+            Type.INT96: self._fast_reader.read_plain_int96,
+            Type.FLOAT: self._fast_reader.read_plain_float,
+            Type.DOUBLE: self._fast_reader.read_plain_double,
+            Type.BYTE_ARRAY: self._fast_reader.read_plain_byte_array,
+            Type.FIXED_LEN_BYTE_ARRAY: self._fast_reader.read_plain_byte_array_fixed
+        }
 
-    Supports width >8 (crossing bytes).
-    """
-    num_groups = header >> 1
-    count = num_groups * 8
-    byte_count = int((width * count)/8)
-    raw_bytes = array.array('B', fo.read(byte_count)).tolist()
-    current_byte = 0
-    b = raw_bytes[current_byte]
-    mask = _mask_for_bits(width)
-    bits_wnd_l = 8
-    bits_wnd_r = 0
-    res = []
-    total = len(raw_bytes)*8
-    while (total >= width):
-        # TODO zero-padding could produce extra zero-values
-        if bits_wnd_r >= 8:
-            bits_wnd_r -= 8
-            bits_wnd_l -= 8
-            b >>= 8
-        elif bits_wnd_l - bits_wnd_r >= width:
-            res.append((b >> bits_wnd_r) & mask)
-            total -= width
-            bits_wnd_r += width
-        elif current_byte + 1 < len(raw_bytes):
-            current_byte += 1
-            b |= (raw_bytes[current_byte] << bits_wnd_l)
-            bits_wnd_l += 8
-    return res
+    def read_plain(self, fo, type_, type_length):
+        conv = self._DECODE_PLAIN[type_]
+        if type_ == Type.FIXED_LEN_BYTE_ARRAY:
+            return conv(fo, type_length)
+        return conv(fo)
 
 
-def read_bitpacked_deprecated(fo, byte_count, count, width):
-    raw_bytes = array.array('B', fo.read(byte_count)).tolist()
+    def read_rle(self, fo, header):
+        """Read a run-length encoded run from the given fo with the given header
+        and bit_width.
 
-    mask = _mask_for_bits(width)
-    index = 0
-    res = []
-    word = 0
-    bits_in_word = 0
-    while len(res) < count and index <= len(raw_bytes):
-        if bits_in_word >= width:
-            # how many bits over the value is stored
-            offset = (bits_in_word - width)
-            # figure out the value
-            value = (word & (mask << offset)) >> offset
-            res.append(value)
+        The count is determined from the header and the width is used to grab the
+        value that's repeated. Yields the value repeated count times.
+        """
+        return self._fast_reader.read_rle(fo, header, self._byte_width)
 
-            bits_in_word -= width
-        else:
-            word = (word << 8) | raw_bytes[index]
-            index += 1
-            bits_in_word += 8
-    return res
+    def read_bitpacked(self, fo, header):
+        """Reads a bitpacked run of the rle/bitpack hybrid.
+
+        Supports width >8 (crossing bytes).
+        """
+        num_groups = header >> 1
+        count = num_groups * 8
+        byte_count = int((self._bit_width * count)/8)
+        data = fo.read(byte_count)
+        return self.read_bitpacked_data(data)
 
 
-def read_rle_bit_packed_hybrid(fo, width, length=None):
-    """Implemenation of a decoder for the rel/bit-packed hybrid encoding.
+    def read_bitpacked_data(self, data):
+        return self._fast_reader.read_bitpacked_data(data, self._mask, self._bit_width)
 
-    If length is not specified, then a 32-bit int is read first to grab the
-    length of the encoded data.
-    """
-    io_obj = fo
-    if length is None:
-        length = read_plain_int32(fo)
-        raw_bytes = fo.read(length)
-        if raw_bytes == '':
-            return None
-        io_obj = io.BytesIO(raw_bytes)
-    res = []
-    while io_obj.tell() < length:
-        header = read_unsigned_var_int(io_obj)
-        if header & 1 == 0:
-            res += read_rle(io_obj, header, width)
-        else:
-            res += read_bitpacked(io_obj, header, width)
-    return res
+
+    def read_bitpacked_deprecated(self, fo, byte_count, count):
+        raw_bytes = array.array('B', fo.read(byte_count)).tolist()
+
+        mask = self._mask
+        index = 0
+        res = []
+        word = 0
+        bits_in_word = 0
+        while len(res) < count and index <= len(raw_bytes):
+            if bits_in_word >= self._bit_width:
+                # how many bits over the value is stored
+                offset = (bits_in_word - self._bit_width)
+                # figure out the value
+                value = (word & (mask << offset)) >> offset
+                res.append(value)
+
+                bits_in_word -= self._bit_width
+            else:
+                word = (word << 8) | raw_bytes[index]
+                index += 1
+                bits_in_word += 8
+        return res
+
+
+    def read_rle_bit_packed_hybrid(self, fo, length=None):
+        """Implementation of a decoder for the rel/bit-packed hybrid encoding.
+
+        If length is not specified, then a 32-bit int is read first to grab the
+        length of the encoded data.
+        """
+        io_obj = fo
+        if length is None:
+            length = self._fast_reader.read_plain_int32(fo)
+        start = io_obj.tell()
+        res = []
+        while io_obj.tell() - start < length:
+            header = self._fast_reader.read_unsigned_var_int(io_obj)
+            if header & 1 == 0:
+                res += self.read_rle(io_obj, header)
+            else:
+                res += self.read_bitpacked(io_obj, header)
+        return res

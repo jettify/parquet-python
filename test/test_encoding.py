@@ -4,6 +4,7 @@ from io import BytesIO
 import unittest
 
 import parquet.encoding
+import parquet._optimized
 from parquet.ttypes import Type
 from nose import SkipTest
 
@@ -11,58 +12,65 @@ from nose import SkipTest
 class TestPlain(unittest.TestCase):
 
     def test_int32(self):
+        reader = parquet._optimized.BinaryReader()
         self.assertEquals(
             999,
-            parquet.encoding.read_plain_int32(
+            reader.read_plain_int32(
                 BytesIO(struct.pack("<i", 999))))
 
     def test_int64(self):
+        reader = parquet._optimized.BinaryReader()
         self.assertEquals(
             999,
-            parquet.encoding.read_plain_int64(
+            reader.read_plain_int64(
                 BytesIO(struct.pack("<q", 999))))
         self.assertEquals(
             0,
-            parquet.encoding.read_plain_int64(
+            reader.read_plain_int64(
                 BytesIO(struct.pack("<q", 0))))
 
     def test_int96(self):
+        reader = parquet._optimized.BinaryReader()
         self.assertEquals(
             999,
-            parquet.encoding.read_plain_int96(
+            reader.read_plain_int96(
                 BytesIO(struct.pack("<qi", 0, 999))))
 
     def test_float(self):
+        reader = parquet._optimized.BinaryReader()
         self.assertAlmostEquals(
             9.99,
-            parquet.encoding.read_plain_float(
+            reader.read_plain_float(
                 BytesIO(struct.pack("<f", 9.99))),
             2)
 
     def test_double(self):
+        reader = parquet._optimized.BinaryReader()
         self.assertEquals(
             9.99,
-            parquet.encoding.read_plain_double(
+            reader.read_plain_double(
                 BytesIO(struct.pack("<d", 9.99))))
 
     def test_fixed(self):
+        reader = parquet._optimized.BinaryReader()
         data = b"foobar"
         fo = BytesIO(data)
         self.assertEquals(
             data[:3],
-            parquet.encoding.read_plain_byte_array_fixed(
+            reader.read_plain_byte_array_fixed(
                 fo, 3))
         self.assertEquals(
             data[3:],
-            parquet.encoding.read_plain_byte_array_fixed(
+            reader.read_plain_byte_array_fixed(
                 fo, 3))
 
     def test_fixed_read_plain(self):
+        reader = parquet.encoding.Encoding(1)
         data = b"foobar"
         fo = BytesIO(data)
         self.assertEquals(
             data[:3],
-            parquet.encoding.read_plain(
+            reader.read_plain(
                 fo, Type.FIXED_LEN_BYTE_ARRAY, 3))
 
 
@@ -70,20 +78,23 @@ class TestRle(unittest.TestCase):
 
     def testFourByteValue(self):
         fo = BytesIO(struct.pack("<i", 1 << 30))
-        out = parquet.encoding.read_rle(fo, 2 << 1, 30)
+        reader = parquet.encoding.Encoding(30)
+        out = reader.read_rle(fo, 2 << 1)
         self.assertEquals([1 << 30] * 2, list(out))
 
 
 class TestVarInt(unittest.TestCase):
 
     def testSingleByte(self):
+        reader = parquet._optimized.BinaryReader()
         fo = BytesIO(struct.pack("<B", 0x7F))
-        out = parquet.encoding.read_unsigned_var_int(fo)
+        out = reader.read_unsigned_var_int(fo)
         self.assertEquals(0x7F, out)
 
     def testFourByte(self):
+        reader = parquet._optimized.BinaryReader()
         fo = BytesIO(struct.pack("<BBBB", 0xFF, 0xFF, 0xFF, 0x7F))
-        out = parquet.encoding.read_unsigned_var_int(fo)
+        out = reader.read_unsigned_var_int(fo)
         self.assertEquals(0x0FFFFFFF, out)
 
 
@@ -94,7 +105,8 @@ class TestBitPacked(unittest.TestCase):
         encoded_bitstring = array.array('B', raw_data_in).tostring()
         fo = BytesIO(encoded_bitstring)
         count = 3 << 1
-        res = parquet.encoding.read_bitpacked(fo, count, 3)
+        reader = parquet.encoding.Encoding(3)
+        res = reader.read_bitpacked(fo, count)
         self.assertEquals([x for x in range(8)], res)
 
 
@@ -104,7 +116,8 @@ class TestBitPackedDeprecated(unittest.TestCase):
         encoded_bitstring = array.array(
             'B', [0b00000101, 0b00111001, 0b01110111]).tostring()
         fo = BytesIO(encoded_bitstring)
-        res = parquet.encoding.read_bitpacked_deprecated(fo, 3, 8, 3)
+        reader = parquet.encoding.Encoding(3)
+        res = reader.read_bitpacked_deprecated(fo, 3, 8)
         self.assertEquals([x for x in range(8)], res)
 
 

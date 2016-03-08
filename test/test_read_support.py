@@ -10,23 +10,26 @@ import parquet
 
 class TestFileFormat(unittest.TestCase):
     def test_header_magic_bytes(self):
+        main = parquet.ParquetMain()
         with tempfile.NamedTemporaryFile() as t:
             t.write(b"PAR1_some_bogus_data")
             t.flush()
-            self.assertTrue(parquet._check_header_magic_bytes(t))
+            self.assertTrue(main._check_header_magic_bytes(t))
 
     def test_footer_magic_bytes(self):
+        main = parquet.ParquetMain()
         with tempfile.NamedTemporaryFile() as t:
             t.write(b"PAR1_some_bogus_data_PAR1")
             t.flush()
-            self.assertTrue(parquet._check_footer_magic_bytes(t))
+            self.assertTrue(main._check_footer_magic_bytes(t))
 
     def test_not_parquet_file(self):
+        main = parquet.ParquetMain()
         with tempfile.NamedTemporaryFile() as t:
             t.write(b"blah")
             t.flush()
-            self.assertFalse(parquet._check_header_magic_bytes(t))
-            self.assertFalse(parquet._check_footer_magic_bytes(t))
+            self.assertFalse(main._check_header_magic_bytes(t))
+            self.assertFalse(main._check_footer_magic_bytes(t))
 
 
 class TestMetadata(unittest.TestCase):
@@ -34,11 +37,13 @@ class TestMetadata(unittest.TestCase):
     f = "test-data/nation.impala.parquet"
 
     def test_footer_bytes(self):
+        main = parquet.ParquetMain()
         with open(self.f, 'rb') as fo:
-            self.assertEquals(327, parquet._get_footer_size(fo))
+            self.assertEquals(327, main._get_footer_size(fo))
 
     def test_read_footer(self):
-        footer = parquet.read_footer(self.f)
+        main = parquet.ParquetMain()
+        footer = main.read_footer(self.f)
         self.assertEquals(
             set([s.name for s in footer.schema]),
             set(["schema", "n_regionkey", "n_name", "n_nationkey",
@@ -46,7 +51,8 @@ class TestMetadata(unittest.TestCase):
 
     def test_dump_metadata(self):
         data = BytesIO()
-        parquet.dump_metadata(self.f, data)
+        main = parquet.ParquetMain()
+        main.dump_metadata(self.f, data)
 
 
 class Options(object):
@@ -86,15 +92,16 @@ class TestCompatibility(unittest.TestCase):
         with open(csv_file, 'r') as f:
             expected_data = list(csv.reader(f, delimiter='|'))
 
+        main = parquet.ParquetMain()
         actual_raw_data = StringIO()
-        parquet.dump(parquet_file, Options(), out=actual_raw_data)
+        main.dump(parquet_file, Options(), out=actual_raw_data)
         actual_raw_data.seek(0, 0)
         actual_data = list(csv.reader(actual_raw_data, delimiter='\t'))
 
         self._compare_data(expected_data, actual_data)
 
         actual_raw_data = StringIO()
-        parquet.dump(parquet_file, Options(no_headers=False),
+        main.dump(parquet_file, Options(no_headers=False),
                      out=actual_raw_data)
         actual_raw_data.seek(0, 0)
         actual_data = list(csv.reader(actual_raw_data, delimiter='\t'))[1:]
@@ -111,14 +118,15 @@ class TestCompatibility(unittest.TestCase):
             expected_data = list(csv.reader(f, delimiter='|'))
 
         actual_raw_data = StringIO()
-        parquet.dump(parquet_file, Options(format='json'),
+        main = parquet.ParquetMain()
+        main.dump(parquet_file, Options(format='json'),
                      out=actual_raw_data)
         actual_raw_data.seek(0, 0)
         actual_data = [json.loads(x.rstrip()) for x in
                        actual_raw_data.read().split("\n") if len(x) > 0]
 
         assert len(expected_data) == len(actual_data)
-        footer = parquet.read_footer(parquet_file)
+        footer = main.read_footer(parquet_file)
         cols = [s.name for s in footer.schema]
         for expected, actual in zip(expected_data, actual_raw_data):
             assert len(expected) == len(actual)
@@ -134,6 +142,7 @@ class TestCompatibility(unittest.TestCase):
         expected_data = []
         with open(csv_file, 'r') as f:
             expected_data = list(csv.reader(f, delimiter='|'))
+        main = parquet.ParquetMain()
 
         def _custom_datatype(in_dict, keys):
             '''
@@ -148,9 +157,9 @@ class TestCompatibility(unittest.TestCase):
             rows = zip(*columns)
             return [x for x in rows]
 
-        actual_data = parquet.dump(parquet_file, Options(format='custom'), out=_custom_datatype)
+        actual_data = main.dump(parquet_file, Options(format='custom'), out=_custom_datatype)
         assert len(expected_data) == len(actual_data)
-        footer = parquet.read_footer(parquet_file)
+        footer = main.read_footer(parquet_file)
         cols = [s.name for s in footer.schema]
 
         for expected, actual in zip(expected_data, actual_data):

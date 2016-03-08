@@ -1,5 +1,4 @@
-from .main import (_validate_parquet_file, _read_footer, _get_offset, _read_page_header,
-                   read_dictionary_page, read_data_page)
+from .main import ParquetMain
 from .ttypes import PageType, Type
 from .converted_types import convert_column
 from .schema import SchemaHelper
@@ -23,16 +22,18 @@ class ParquetReader(object):
     def __init__(self, binary_stream):
         self._main_file = None
         self._directory = None
+        self._main_filename = None
         self._files = {}
+        self._main = ParquetMain()
         self._open_main(binary_stream)
-        _validate_parquet_file(self._main_file)
-        self._footer = _read_footer(self._main_file)
+        self._footer = self._main.read_footer(self._main_file, self._main_filename)
         self._schema_helper = SchemaHelper(self._footer.schema)
         self._rg = self._footer.row_groups
         self._cg = self._rg[0].columns
         self._schema = [s for s in self._footer.schema if s.num_children is None]
-        self._cols = [".".join(x for x in c.meta_data.path_in_schema) for c in
-                      self._cg]
+        self._cols = []
+        for c in self._cg:
+            self._cols.append(".".join([x for x in c.meta_data.path_in_schema]))
         self._rows = self._footer.num_rows
         self._row_group_index = 0
         self._column_group_locations = defaultdict(CurrentLocation)
@@ -45,8 +46,8 @@ class ParquetReader(object):
         if isinstance(binary_stream_or_name, str):
             if self._is_directory(binary_stream_or_name):
                 self._directory = binary_stream_or_name
-                binary_stream_or_name = os.path.join(binary_stream_or_name, "_metadata")
-            self._main_file = self._open_file(binary_stream_or_name)
+                self._main_filename = os.path.join(binary_stream_or_name, "_metadata")
+            self._main_file = self._open_file(self._main_filename)
         else:
             self._main_file = binary_stream_or_name
 
@@ -93,7 +94,7 @@ class ParquetReader(object):
             fileobj = self._get_file(file_name)
         else:
             fileobj = self._main_file
-        offset = _get_offset(col.meta_data)
+        offset = self._main._get_offset(col.meta_data)
         fileobj.seek(offset, 0)
         cmd = col.meta_data
         cmd.width = width
@@ -105,7 +106,7 @@ class ParquetReader(object):
         dict_items = []
 
         while values_seen < total_rows_in_group:
-            ph = _read_page_header(fileobj)
+            ph = self._main._read_page_header(fileobj)
             if page_index < location_in_group._page_index and not natural:
                 # skip
                 if ph.type == PageType.DATA_PAGE:
@@ -113,13 +114,13 @@ class ParquetReader(object):
                     daph = ph.data_page_header
                     values_seen += daph.num_values
                 elif ph.type == PageType.DICTIONARY_PAGE:
-                    dict_items = read_dictionary_page(fileobj, ph, cmd)
+                    dict_items = self._main.read_dictionary_page(fileobj, ph, cmd)
             else:
                 # start reading rows.
                 if ph.type == PageType.DATA_PAGE:
-                    values = read_data_page(fileobj,
-                                            self._schema_helper, ph,
-                                            cmd, dict_items)
+                    values = self._main.read_data_page(fileobj,
+                                                       self._schema_helper, ph,
+                                                       cmd, dict_items)
 
                     # Need to check which values to keep
                     if location_in_group._row_index != 0:
@@ -143,7 +144,7 @@ class ParquetReader(object):
 
                     values_seen += ph.data_page_header.num_values
                 elif ph.type == PageType.DICTIONARY_PAGE:
-                    dict_items = read_dictionary_page(fileobj, ph, cmd)
+                    dict_items = self._main.read_dictionary_page(fileobj, ph, cmd)
             if page_index < location_in_group._page_index:
                 page_index += 1
             else:
@@ -165,7 +166,6 @@ class ParquetReader(object):
         if natural and rows is not None:
             raise ValueError("Cannot specify rows with natural")
         remaining_rows = rows
-        rows_read = 0
         while self._row_group_index < len(self._rg):
             rg = self._rg[self._row_group_index]
             cg = rg.columns
@@ -190,6 +190,9 @@ class ParquetReader(object):
 
             self._row_group_index += 1
 
+        return self._make_dataframe(res, columns)
+
+    def _make_dataframe(self, res, columns):
         if len(res) == 0:
             for name in columns:
                 res[name] = []

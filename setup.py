@@ -3,6 +3,14 @@ try:
 except ImportError:
     from distutils.core import setup
 
+from Cython.Build import cythonize
+from distutils.extension import Extension
+
+sourcefiles = ['parquet/_optimized.pyx', 'parquet/optimized.c']
+
+extensions = [Extension("parquet/_optimized", sourcefiles)]
+
+
 setup(name='parquet',
     version='1.0',
     description='Python support for Parquet file format',
@@ -10,7 +18,7 @@ setup(name='parquet',
     author_email='joecrow@gmail.com',
     packages=[ 'parquet' ],
     install_requires=[
-        'thrift',
+        'thriftpy',
     ],
     extras_require = {
         'snappy support': ['python-snappy']
@@ -20,4 +28,5 @@ setup(name='parquet',
             'parquet = parquet.__main__:main',
         ]
     },
+    ext_modules=cythonize(extensions)
 )
