@@ -111,19 +111,19 @@ class ParquetMain(object):
         return ph
 
 
-    def read_footer(self, fileobj, filename):
+    def read_footer(self, filename, fileobj=None):
         """Reads and returns the FileMetaData object for the given file."""
         if fileobj is None:
-            close = True
+            do_close = True
             fileobj = open(filename, 'rb')
         else:
-            close = False
+            do_close = False
         try:
             self._validate_parquet_file(fileobj, filename)
             return self._read_footer(fileobj)
         finally:
-            if close:
-                close(fileobj)
+            if do_close:
+                fileobj.close()
 
     def _validate_parquet_file(self, fo, filename=None):
         if not self._check_header_magic_bytes(fo) or \

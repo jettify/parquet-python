@@ -26,7 +26,7 @@ class ParquetReader(object):
         self._files = {}
         self._main = ParquetMain()
         self._open_main(binary_stream)
-        self._footer = self._main.read_footer(self._main_file, self._main_filename)
+        self._footer = self._main.read_footer(self._main_filename, self._main_file)
         self._schema_helper = SchemaHelper(self._footer.schema)
         self._rg = self._footer.row_groups
         self._cg = self._rg[0].columns
