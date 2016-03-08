@@ -290,18 +290,7 @@ class ParquetMain(object):
 
         return vals
 
-
-    def read_data_page(self, fo, schema_helper, page_header, column_metadata,
-                       dictionary):
-        """Reads the datapage from the given file-like object based upon the
-        metadata in the schema_helper, page_header, column_metadata, and
-        (optional) dictionary. Returns a list of values.
-        """
-        daph = page_header.data_page_header
-        raw_bytes = self._read_page(fo, page_header, column_metadata)
-        io_obj = io.BytesIO(raw_bytes)
-        vals = []
-        definition_levels = None
+    def _read_definitions(self, io_obj, daph, schema_helper, column_metadata):
         # definition levels are skipped if data is required.
         if not schema_helper.is_required(column_metadata.path_in_schema[-1]):
             max_definition_level = schema_helper.max_definition_level(
@@ -314,8 +303,10 @@ class ParquetMain(object):
                                                     daph.definition_level_encoding,
                                                     daph.num_values,
                                                     bit_width)
+            return definition_levels
+        return None
 
-        # repetition levels are skipped if data is at the first level.
+    def _read_repetitions(self, io_obj, daph, schema_helper, column_metadata):
         if len(column_metadata.path_in_schema) > 1:
             max_repetition_level = schema_helper.max_repetition_level(
                 column_metadata.path_in_schema)
@@ -323,37 +314,56 @@ class ParquetMain(object):
             repetition_levels = self._read_data(io_obj,
                                                 daph.repetition_level_encoding,
                                                 daph.num_values, bit_width)
+            return repetition_levels
+        return None
 
-        # TODO Actually use the definition and repetition levels.
+    def _read_plain(self, io_obj, daph, column_metadata, reader):
+        vals = []
+        width = getattr(column_metadata, 'num_values')
+        for i in range(daph.num_values):
+            dat = reader.read_plain(io_obj, column_metadata.type, width)
+            vals.append(dat)
+        return vals
+
+    def _read_plain_dict(self, io_obj, daph, definition_levels, dictionary):
+        # bit_width is stored as single byte.
+        bit_width = struct.unpack("<B", io_obj.read(1))[0]
+        dict_values_bytes = io_obj.read()
+        dict_values_io_obj = io.BytesIO(dict_values_bytes)
+        reader = self._get_reader(bit_width)
+        values = reader.read_rle_bit_packed_hybrid(
+            dict_values_io_obj, len(dict_values_bytes))
+
+        if definition_levels is not None:
+            vals = reader.filter_values(dictionary, values, definition_levels)
+        else:
+            vals = [dictionary[v] for v in values]
+
+        if len(vals)  > daph.num_values:
+            vals = vals[0: daph.num_values]
+        return vals
+
+    def read_data_page(self, fo, schema_helper, page_header, column_metadata,
+                       dictionary):
+        """Reads the datapage from the given file-like object based upon the
+        metadata in the schema_helper, page_header, column_metadata, and
+        (optional) dictionary. Returns a list of values.
+        """
+        daph = page_header.data_page_header
+        raw_bytes = self._read_page(fo, page_header, column_metadata)
+        io_obj = io.BytesIO(raw_bytes)
+
+        definition_levels = self._read_definitions(io_obj, daph,
+                                                   schema_helper,
+                                                   column_metadata)
+        self._read_repetitions(io_obj, daph, schema_helper,
+                               column_metadata)
 
         reader = self._get_reader(1)
         if daph.encoding == Encoding.PLAIN:
-            width = getattr(column_metadata, 'num_values')
-            for i in range(daph.num_values):
-                vals.append(
-                    reader.read_plain(io_obj, column_metadata.type, width))
+            vals = self._read_plain(io_obj, daph, column_metadata, reader)
         elif daph.encoding == Encoding.PLAIN_DICTIONARY:
-            # bit_width is stored as single byte.
-            bit_width = struct.unpack("<B", io_obj.read(1))[0]
-            dict_values_bytes = io_obj.read()
-            dict_values_io_obj = io.BytesIO(dict_values_bytes)
-            reader = self._get_reader(bit_width)
-            values = reader.read_rle_bit_packed_hybrid(
-                dict_values_io_obj, len(dict_values_bytes))
-            if definition_levels is not None:
-                # We need to do masking for which are null.
-                idx = 0
-                for ind in definition_levels:
-                    if ind is 0:
-                        vals.append(None)
-                    else:
-                        vals.append(dictionary[values[idx]])
-                        idx += 1
-            else:
-                vals += [dictionary[v] for v in values]
-
-            if len(vals)  > daph.num_values:
-                vals = vals[0: daph.num_values]
+            vals = self._read_plain_dict(io_obj, daph, definition_levels, dictionary)
 
             if len(vals) != daph.num_values:
                 raise ParquetFormatException("Error reading enough data from dictionary")
@@ -369,8 +379,8 @@ class ParquetMain(object):
         dict_items = []
         reader = self._get_reader(1)
         while io_obj.tell() < len(raw_bytes):
-            dict_items.append(
-                reader.read_plain(io_obj, column_metadata.type, width))
+            dat = reader.read_plain(io_obj, column_metadata.type, width)
+            dict_items.append(dat)
         return dict_items
 
 

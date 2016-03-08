@@ -39,6 +39,9 @@ class Encoding(object):
             Type.FIXED_LEN_BYTE_ARRAY: self._fast_reader.read_plain_byte_array_fixed
         }
 
+    def filter_values(self, dictionary, values, definition_levels):
+        return self._fast_reader.filter_values(dictionary, values, definition_levels)
+
     def read_plain(self, fo, type_, type_length):
         return self._DECODE_PLAIN[type_](fo, type_length)
 

@@ -33,6 +33,15 @@ cdef class BinaryReader:
         self._array = array.array('i', [0] * size)
         self._array_size = size
 
+    def filter_values(self, dictionary, values, definition_levels):
+        # We need to do masking for which are null.
+        idx = 0
+        vals = [None for ind in definition_levels]
+        for i, ind in enumerate(definition_levels):
+            if ind != 0:
+                vals[i] = dictionary[values[idx]]
+                idx += 1
+        return vals
 
     def read_unsigned_var_int(self, fo):
         result = 0
