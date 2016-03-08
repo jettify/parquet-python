@@ -1,10 +1,10 @@
-
+#include <stdlib.h>
 
 int read_bitpacked_internal(void *data, int data_len, int mask, int* res, int total, int bit_width)
 {
     unsigned char * raw_bytes =  (unsigned char*)data;
     int current_byte = 0;
-    unsigned char b = raw_bytes[current_byte];
+    unsigned int b = (unsigned int) raw_bytes[current_byte];
     int bits_wnd_l = 8;
     int bits_wnd_r = 0;
     int idx = 0;

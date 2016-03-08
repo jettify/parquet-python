@@ -47,6 +47,8 @@ class ParquetReader(object):
             if self._is_directory(binary_stream_or_name):
                 self._directory = binary_stream_or_name
                 self._main_filename = os.path.join(binary_stream_or_name, "_metadata")
+            else:
+                self._main_filename = binary_stream_or_name
             self._main_file = self._open_file(self._main_filename)
         else:
             self._main_file = binary_stream_or_name
