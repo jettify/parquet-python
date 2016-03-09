@@ -21,6 +21,7 @@ cdef class BinaryReader:
 
     def __init__(self):
         # Initialize array size to something reasonable
+        self._array_size = 0
         self._ensure_array(10240)
         self._zero_data = b"\x00\x00\x00\x00"
 
@@ -35,13 +36,23 @@ cdef class BinaryReader:
 
     def filter_values(self, dictionary, values, definition_levels):
         # We need to do masking for which are null.
-        idx = 0
-        vals = [None for ind in definition_levels]
-        for i, ind in enumerate(definition_levels):
-            if ind != 0:
-                vals[i] = dictionary[values[idx]]
-                idx += 1
-        return vals
+        dsize = len(definition_levels)
+        vsize = len(values)
+        if dsize <= vsize and sum(definition_levels) == dsize:
+            # no missing, can optimize
+            return list(map(lambda x: dictionary[x], values))[:dsize]
+        else:
+            all_values = list(map(lambda x: dictionary[x], values))
+
+            def _gen():
+
+                viter = iter(all_values)
+                for ind in definition_levels:
+                    if ind == 0:
+                        yield None
+                    else:
+                        yield next(viter)
+            return list(_gen())[:dsize]
 
     def read_unsigned_var_int(self, fo):
         result = 0

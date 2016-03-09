@@ -378,7 +378,8 @@ class ParquetMain(object):
         io_obj = io.BytesIO(raw_bytes)
         dict_items = []
         reader = self._get_reader(1)
-        while io_obj.tell() < len(raw_bytes):
+        l = len(raw_bytes)
+        while io_obj.tell() < l:
             dat = reader.read_plain(io_obj, column_metadata.type, width)
             dict_items.append(dat)
         return dict_items
