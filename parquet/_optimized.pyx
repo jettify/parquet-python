@@ -131,7 +131,8 @@ cdef class BinaryReader:
     def read_plain_byte_array(self, fo, fixed_length=None):
         """Reads a byte array using the plain encoding"""
         length = self.read_plain_int32(fo)
-        return fo.read(length).decode('utf-8')
+        cdef bytes py_bytes = fo.read(length)
+        return py_bytes.decode('utf-8')
 
 
     def read_plain_byte_array_fixed(self, fo, fixed_length):

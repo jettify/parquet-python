@@ -18,7 +18,7 @@ setup(name='parquet',
     author_email='joecrow@gmail.com',
     packages=[ 'parquet' ],
     install_requires=[
-        'thriftpy',
+        'thriftpy', 'cython'
     ],
     extras_require = {
         'snappy support': ['python-snappy']

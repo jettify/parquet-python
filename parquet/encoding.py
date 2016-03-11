@@ -104,8 +104,9 @@ class Encoding(object):
         if length is None:
             length = self._fast_reader.read_plain_int32(fo)
         start = io_obj.tell()
+        limit = length + start
         res = []
-        while io_obj.tell() - start < length:
+        while io_obj.tell() < limit:
             header = self._fast_reader.read_unsigned_var_int(io_obj)
             if header & 1 == 0:
                 res += self.read_rle(io_obj, header)
