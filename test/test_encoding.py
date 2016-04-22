@@ -73,6 +73,16 @@ class TestPlain(unittest.TestCase):
             reader.read_plain(
                 fo, Type.FIXED_LEN_BYTE_ARRAY, 3))
 
+    def test_boolean(self):
+        reader = parquet._optimized.BinaryReader()
+        raw_data_in = [0b00000110]
+        encoded_bitstring = array.array('B', raw_data_in).tostring()
+        fo = BytesIO(encoded_bitstring)
+        self.assertFalse(reader.read_plain_boolean(fo))
+        self.assertTrue(reader.read_plain_boolean(fo))
+        self.assertTrue(reader.read_plain_boolean(fo))
+        self.assertFalse(reader.read_plain_boolean(fo))
+
 
 class TestRle(unittest.TestCase):
 

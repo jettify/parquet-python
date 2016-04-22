@@ -319,7 +319,7 @@ class ParquetMain(object):
 
     def _read_plain(self, io_obj, daph, column_metadata, reader):
         vals = []
-        width = getattr(column_metadata, 'num_values')
+        width = column_metadata.num_values
         for i in range(daph.num_values):
             dat = reader.read_plain(io_obj, column_metadata.type, width)
             vals.append(dat)
@@ -368,8 +368,9 @@ class ParquetMain(object):
             if len(vals) != daph.num_values:
                 raise ParquetFormatException("Error reading enough data from dictionary")
         else:
-            raise ParquetFormatException("Unsupported encoding: %s",
-                                         _get_name(Encoding, daph.encoding))
+            raise ParquetFormatException(
+                "Unsupported encoding: %s",
+                self._get_name(Encoding, daph.encoding))
         return vals
 
 
