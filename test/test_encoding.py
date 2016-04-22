@@ -6,7 +6,6 @@ import unittest
 import parquet.encoding
 import parquet._optimized
 from parquet.ttypes import Type
-from nose import SkipTest
 
 
 class TestPlain(unittest.TestCase):

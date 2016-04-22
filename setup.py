@@ -10,8 +10,6 @@ sourcefiles = ['parquet/_optimized.pyx', 'parquet/optimized.c']
 
 extensions = [Extension("parquet._optimized", sourcefiles)]
 
-# TODO: add nose as a test requirements
-
 setup(
     name='parquet',
     version='1.0',
@@ -22,6 +20,7 @@ setup(
     install_requires=[
         'thriftpy', 'cython', 'pandas',
     ],
+    tests_require=['pytest',],
     extras_require={
         'snappy support': ['python-snappy']
     },
