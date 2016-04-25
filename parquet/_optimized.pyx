@@ -91,10 +91,12 @@ cdef class BinaryReader:
 
     def read_plain_boolean(self, fo, fixed_length=None):
         """Reads a boolean using the plain encoding"""
-        data = fo.read(1)
+        size = 1 # 1 byte
         mask = 1 # 00000001
         width = 1 # 1 bit
+
         if not self._boolean_array:
+            data = fo.read(size)
             self._boolean_array = self.read_bitpacked_data(data, mask, width)
 
         value = self._boolean_array.pop(0)
