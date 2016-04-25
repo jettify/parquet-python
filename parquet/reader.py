@@ -80,7 +80,7 @@ class ParquetReader(object):
     def close(self):
         for fileobj in self._files.values():
             self._close_file(fileobj)
-        self._files = []
+        self._files = {}
 
     def _get_column_info(self, col):
         name = ".".join(x for x in col.meta_data.path_in_schema)
