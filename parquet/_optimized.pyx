@@ -18,12 +18,15 @@ cdef class BinaryReader:
     cdef array.array _array
     cdef int _array_size
     cdef bytes _zero_data
+    cdef array.array _boolean_array
 
     def __init__(self):
         # Initialize array size to something reasonable
         self._array_size = 0
         self._ensure_array(10240)
         self._zero_data = b"\x00\x00\x00\x00"
+
+        self._boolean_array = None
 
     def __del__(self):
         self._array = None
@@ -88,7 +91,14 @@ cdef class BinaryReader:
 
     def read_plain_boolean(self, fo, fixed_length=None):
         """Reads a boolean using the plain encoding"""
-        raise NotImplemented
+        data = fo.read(1)
+        mask = 1 # 00000001
+        width = 1 # 1 bit
+        if not self._boolean_array:
+            self._boolean_array = self.read_bitpacked_data(data, mask, width)
+
+        value = self._boolean_array.pop(0)
+        return value == 1
 
 
     def read_plain_int32(self, fo, fixed_length=None):

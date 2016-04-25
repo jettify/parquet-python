@@ -8,19 +8,20 @@ from distutils.extension import Extension
 
 sourcefiles = ['parquet/_optimized.pyx', 'parquet/optimized.c']
 
-extensions = [Extension("parquet/_optimized", sourcefiles)]
+extensions = [Extension("parquet._optimized", sourcefiles)]
 
-
-setup(name='parquet',
+setup(
+    name='parquet',
     version='1.0',
     description='Python support for Parquet file format',
     author='Joe Crobak',
     author_email='joecrow@gmail.com',
-    packages=[ 'parquet' ],
+    packages=['parquet'],
     install_requires=[
-        'thriftpy', 'cython'
+        'thriftpy', 'cython', 'pandas',
     ],
-    extras_require = {
+    tests_require=['pytest',],
+    extras_require={
         'snappy support': ['python-snappy']
     },
     entry_points={
