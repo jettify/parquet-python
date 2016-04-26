@@ -1,11 +1,13 @@
+from collections import defaultdict
+import os.path
+
+import pandas as pd
+
 from .main import ParquetMain
-from .ttypes import PageType, Type
+from .ttypes import PageType
 from .converted_types import convert_column
 from .schema import SchemaHelper
-
-from collections import defaultdict
-import pandas as pd
-import os.path
+from .filesystem import LocalFileSystem
 
 
 class CurrentLocation(object):
@@ -19,7 +21,9 @@ class CurrentLocation(object):
 
 
 class ParquetReader(object):
-    def __init__(self, binary_stream):
+    def __init__(self, binary_stream, fs=None):
+        self._fs = fs or LocalFileSystem()
+
         self._main_file = None
         self._directory = None
         self._main_filename = None
@@ -54,20 +58,14 @@ class ParquetReader(object):
             self._main_file = binary_stream_or_name
 
     def _is_directory(self, file_name):
-        """ For non local files (ie HDFS), this will need to be overridden
-        """
-        return os.path.isdir(file_name)
+        return self._fs.is_dir(file_name)
 
     def _open_file(self, file_name):
-        """ For non local files (ie HDFS), this will need to be overridden
-        """
-        fileobj = open(file_name, 'rb')
+        fileobj = self._fs.open(file_name, mode='rb')
         self._files[file_name] = fileobj
         return fileobj
 
     def _close_file(self, fileobj):
-        """ For non local files (ie HDFS), this will need to be overridden
-        """
         fileobj.close()
 
     def _get_file(self, file_name):
