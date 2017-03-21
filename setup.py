@@ -12,7 +12,7 @@ extensions = [Extension("parquet._optimized", sourcefiles)]
 
 setup(
     name='parquet',
-    version='1.0',
+    version='1.0.0a2',
     description='Python support for Parquet file format',
     author='Joe Crobak',
     author_email='joecrow@gmail.com',
